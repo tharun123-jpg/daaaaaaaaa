@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ClipForge — Online Video Editor in your browser</title>
+<meta name="description" content="ClipForge is a free online video editor. Trim, split, add filters, text and music on a real timeline, then export in one click — right in your browser. No signup, no watermark, no upload." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="/css/base.css" />
+<link rel="stylesheet" href="/css/landing.css" />
+</head>
+<body>
+
+<div class="bg-glow" aria-hidden="true"></div>
+
+<header class="nav">
+  <a class="brand" href="/">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 32 32" width="30" height="30">
+        <defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#22d3ee"/>
+        </linearGradient></defs>
+        <rect x="1.5" y="4.5" width="29" height="23" rx="6" fill="url(#bg1)"/>
+        <path d="M13 11.6v8.8l7.4-4.4z" fill="#0b0f1c"/>
+      </svg>
+    </span>
+    <span class="brand-text">Clip<em>Forge</em></span>
+  </a>
+  <nav class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#formats">Formats</a>
+    <a href="#faq">FAQ</a>
+    <a href="/projects" id="navProjects">My projects</a>
+  </nav>
+  <div class="nav-cta">
+    <a class="btn btn-primary" href="/editor">Open editor</a>
+  </div>
+</header>
+
+<main>
+  <!-- ---------------------------------------------------------------- hero -->
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="pill"><span class="dot"></span> 100% in-browser · nothing gets uploaded</span>
+      <h1>Edit video the easy way,<br /><span class="grad">right in your browser.</span></h1>
+      <p class="lede">
+        ClipForge is a free online video editor with a real multi-track timeline.
+        Cut, trim, split, add titles, colour looks and music — then export a share-ready
+        clip in one click. No install, no account, no watermark.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="/editor">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 5.14v13.72L19 12z"/></svg>
+          Start editing free
+        </a>
+        <a class="btn btn-ghost btn-lg" href="#how">See how it works</a>
+      </div>
+      <ul class="hero-badges">
+        <li>✓ No signup</li>
+        <li>✓ No watermark</li>
+        <li>✓ Files never leave your device</li>
+      </ul>
+    </div>
+
+    <!-- CSS mock of the editor -->
+    <div class="mock" aria-hidden="true">
+      <div class="mock-top">
+        <span class="mdot r"></span><span class="mdot y"></span><span class="mdot g"></span>
+        <span class="mock-title">sunset-reel.mp4 — ClipForge</span>
+      </div>
+      <div class="mock-body">
+        <div class="mock-side">
+          <div class="mock-chip">Media</div>
+          <div class="mock-media" style="--c1:#3b2a6b;--c2:#7c5cff"></div>
+          <div class="mock-media" style="--c1:#0e4c5a;--c2:#22d3ee"></div>
+          <div class="mock-media" style="--c1:#5a2a3d;--c2:#f472b6"></div>
+        </div>
+        <div class="mock-stage">
+          <div class="mock-screen">
+            <div class="mock-sun"></div>
+            <div class="mock-mountains"></div>
+            <div class="mock-caption">SUMMER 2026</div>
+          </div>
+          <div class="mock-transport">
+            <span class="mt-btn"></span><span class="mt-bar"><i></i></span><span class="mt-time">00:07 / 00:24</span>
+          </div>
+        </div>
+        <div class="mock-insp">
+          <div class="mock-chip">Inspector</div>
+          <div class="mock-slider"><i style="width:72%"></i></div>
+          <div class="mock-slider"><i style="width:38%"></i></div>
+          <div class="mock-slider"><i style="width:55%"></i></div>
+          <div class="mock-swatches"><span></span><span></span><span></span><span></span></div>
+        </div>
+      </div>
+      <div class="mock-timeline">
+        <div class="mock-ruler"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="mock-track t1"><span class="mc a" style="left:2%;width:26%"></span><span class="mc b" style="left:29%;width:20%"></span><span class="mc c" style="left:50%;width:30%"></span></div>
+        <div class="mock-track t2"><span class="mc d" style="left:10%;width:18%"></span><span class="mc e" style="left:52%;width:14%"></span></div>
+        <div class="mock-track t3"><span class="mc f" style="left:0%;width:44%"></span></div>
+        <div class="mock-playhead"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------ features -->
+  <section class="section" id="features">
+    <header class="section-head">
+      <h2>Everything a quick edit needs</h2>
+      <p>Pro enough for real work, simple enough to finish in five minutes.</p>
+    </header>
+    <div class="cards">
+      <article class="card">
+        <div class="ico">🎬</div>
+        <h3>Multi-track timeline</h3>
+        <p>Drag clips on the timeline, trim the edges, split at the playhead, reorder layers and snap everything into place.</p>
+      </article>
+      <article class="card">
+        <div class="ico">✂️</div>
+        <h3>Trim, split &amp; speed</h3>
+        <p>Frame-accurate in/out points, one-key split, and speed control from 0.25× slow-motion to 4× hyperlapse.</p>
+      </article>
+      <article class="card">
+        <div class="ico">🎨</div>
+        <h3>Filters &amp; colour</h3>
+        <p>Brightness, contrast, saturation, blur, grayscale, sepia and hue — with live preview on the canvas.</p>
+      </article>
+      <article class="card">
+        <div class="ico">🔠</div>
+        <h3>Titles &amp; captions</h3>
+        <p>Add text clips with font size, colour, outline and alignment. Perfect for reels, shorts and lower thirds.</p>
+      </article>
+      <article class="card">
+        <div class="ico">🎚️</div>
+        <h3>Audio mixing</h3>
+        <p>Per-clip volume, mute, fade in and fade out. Import music or voice-over tracks and balance them by ear.</p>
+      </article>
+      <article class="card">
+        <div class="ico">⚡</div>
+        <h3>One-click export</h3>
+        <p>Render straight from your browser to WebM or MP4, at 480p, 720p, 1080p — no queue, no render farm.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------- how it works -->
+  <section class="section how" id="how">
+    <header class="section-head">
+      <h2>Three steps to your edit</h2>
+      <p>Nothing to install. Your footage stays on your machine the whole time.</p>
+    </header>
+    <ol class="steps">
+      <li>
+        <span class="step-n">1</span>
+        <h3>Drop your media</h3>
+        <p>Drag in MP4, WebM, MOV, MP3, WAV or images. ClipForge reads each file locally and builds thumbnails and waveforms.</p>
+      </li>
+      <li>
+        <span class="step-n">2</span>
+        <h3>Shape the story</h3>
+        <p>Cut on the timeline, layer a second track, add a title card and a music bed. Undo is always one keystroke away.</p>
+      </li>
+      <li>
+        <span class="step-n">3</span>
+        <h3>Export &amp; share</h3>
+        <p>Hit export, watch the progress bar, and download the finished file. Drop it straight into YouTube, Reels or TikTok.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- -------------------------------------------------------------- formats -->
+  <section class="section" id="formats">
+    <header class="section-head">
+      <h2>Made for every canvas</h2>
+      <p>Switch the project aspect ratio and the preview updates instantly.</p>
+    </header>
+    <div class="formats">
+      <div class="fmt"><div class="ratio r169">16:9</div><div><strong>YouTube / landscape</strong><span>1920 × 1080</span></div></div>
+      <div class="fmt"><div class="ratio r916">9:16</div><div><strong>Reels / Shorts / TikTok</strong><span>1080 × 1920</span></div></div>
+      <div class="fmt"><div class="ratio r11">1:1</div><div><strong>Feed posts</strong><span>1080 × 1080</span></div></div>
+      <div class="fmt"><div class="ratio r45">4:5</div><div><strong>Portrait posts</strong><span>1080 × 1350</span></div></div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------------ faq -->
+  <section class="section faq" id="faq">
+    <header class="section-head"><h2>Questions, answered</h2></header>
+    <div class="faq-grid">
+      <details open><summary>Do I need to install anything?</summary><p>No. ClipForge runs entirely in your browser — Chrome, Edge, Firefox or Safari. Nothing to download, nothing to update.</p></details>
+      <details><summary>Are my videos uploaded to a server?</summary><p>No. Imported files are read locally with the browser File API. Editing and exporting happen on your own device. Only if you choose “Save online” does ClipForge store a project (and the media you selected) on your own server.</p></details>
+      <details><summary>Is there a watermark or a paywall?</summary><p>There is no watermark and no signup. The whole editor is open — timeline, filters, titles, audio and export.</p></details>
+      <details><summary>What can I export?</summary><p>WebM (VP9/VP8 + Opus) and, where the browser supports it, MP4 (H.264 + AAC). Pick 480p, 720p or 1080p and a bitrate, then download the file.</p></details>
+      <details><summary>Can I come back to a project later?</summary><p>Yes — save the project file (it’s small JSON) and reopen it any time, or save it to this server so it shows up under “My projects”.</p></details>
+      <details><summary>Is export really instant?</summary><p>Export is real-time: the browser plays your timeline once while recording it, so a 30-second video takes about 30 seconds. No queue and no upload, so it still beats waiting on a cloud render.</p></details>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <h2>Ready to make your first cut?</h2>
+    <p>The editor opens in a new tab. Bring a video clip and try the split tool.</p>
+    <a class="btn btn-primary btn-lg" href="/editor">Open the editor →</a>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="foot-brand">
+    <span class="brand-mark small">
+      <svg viewBox="0 0 32 32" width="22" height="22"><rect x="1.5" y="4.5" width="29" height="23" rx="6" fill="url(#bg1)"/><path d="M13 11.6v8.8l7.4-4.4z" fill="#0b0f1c"/></svg>
+    </span>
+    <span>ClipForge</span>
+  </div>
+  <nav class="foot-links">
+    <a href="/editor">Editor</a>
+    <a href="/projects">My projects</a>
+    <a href="/api/projects">API</a>
+    <a href="#features">Features</a>
+  </nav>
+  <p class="foot-note">Built with plain HTML, CSS and JavaScript — no framework, no build step.</p>
+</footer>
+
+<script src="/js/landing.js" type="module"></script>
+</body>
+</html>

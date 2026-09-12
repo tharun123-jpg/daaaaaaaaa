@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>My projects — ClipForge</title>
+<meta name="description" content="Projects saved on your ClipForge server." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="/css/base.css" />
+<link rel="stylesheet" href="/css/landing.css" />
+<style>
+  .proj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .proj-card { border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; background: #0d1224; transition: .16s; }
+  .proj-card:hover { transform: translateY(-3px); border-color: rgba(124,92,255,.55); }
+  .proj-thumb { aspect-ratio: 16/9; background: linear-gradient(135deg, #1a2140, #0b1020); background-size: cover; background-position: center; position: relative; }
+  .proj-thumb .badge { position: absolute; left: 10px; bottom: 10px; font-size: 11px; font-family: var(--mono); background: rgba(0,0,0,.6); padding: 3px 7px; border-radius: 6px; }
+  .proj-body { padding: 14px; display: grid; gap: 4px; }
+  .proj-body strong { font-size: 15px; }
+  .proj-body .meta { font-size: 12px; color: var(--muted-2); }
+  .proj-actions { display: flex; gap: 8px; padding: 0 14px 14px; }
+  .proj-empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .page-head { display: flex; align-items: center; gap: 16px; padding: 34px clamp(16px, 4vw, 56px) 8px; max-width: 1240px; margin: 0 auto; width: 100%; }
+  .page-head h1 { font-size: clamp(22px, 3vw, 32px); }
+  .page-head .spacer { flex: 1; }
+  main { max-width: 1240px; margin: 0 auto; padding: 16px clamp(16px, 4vw, 56px) 60px; }
+</style>
+</head>
+<body>
+<div class="bg-glow" aria-hidden="true"></div>
+
+<header class="nav">
+  <a class="brand" href="/">
+    <span class="brand-mark">
+      <svg viewBox="0 0 32 32" width="30" height="30"><rect x="1.5" y="4.5" width="29" height="23" rx="6" fill="#7c5cff"/><path d="M13 11.6v8.8l7.4-4.4z" fill="#0b0f1c"/></svg>
+    </span>
+    <span class="brand-text">Clip<em>Forge</em></span>
+  </a>
+  <nav class="nav-links">
+    <a href="/">Home</a>
+    <a href="/editor">Editor</a>
+    <a href="/api/projects">API</a>
+  </nav>
+  <div class="nav-cta"><a class="btn btn-primary" href="/editor">Open editor</a></div>
+</header>
+
+<div class="page-head">
+  <h1>My projects</h1>
+  <div class="spacer"></div>
+  <button id="btnRefresh" class="btn btn-sm">↻ Refresh</button>
+</div>
+
+<main>
+  <div id="projGrid" class="proj-grid"></div>
+  <div id="projEmpty" class="proj-empty" hidden>
+    <h3>No saved projects yet</h3>
+    <p class="muted" style="margin-top:8px">Open the editor and press <b>Save online</b> — the project (and its media) will show up here.</p>
+    <p style="margin-top:18px"><a class="btn btn-primary" href="/editor">Open the editor</a></p>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="foot-brand"><span>ClipForge</span></div>
+  <nav class="foot-links"><a href="/">Home</a><a href="/editor">Editor</a></nav>
+  <p class="foot-note">Projects are stored as JSON plus the media you uploaded, inside <code>video-editor/data/</code>.</p>
+</footer>
+
+<script type="module" src="/js/projects.js"></script>
+</body>
+</html>

@@ -1,3 +1,12 @@
+# Projects in this repo
+
+| Folder | What it is |
+| --- | --- |
+| [`video-editor/`](video-editor/README.md) | **ClipForge** — a complete browser-based online video editor (timeline, filters, titles, audio, export) with a zero-dependency Python server. Run it with `python3 video-editor/server.py`. |
+| this README | the pre-existing defensive anticheat QA test lab (unrelated to the video editor) |
+
+---
+
 # FF Anticheat Test Lab (QA Only)
 
 > **This is NOT a hack / cheat panel.**

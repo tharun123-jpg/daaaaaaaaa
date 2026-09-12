@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ClipForge Editor — online video editor</title>
+<meta name="description" content="Free online video editor with a real multi-track timeline, filters, titles and audio mixing. Export from your browser — nothing is uploaded." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="/css/base.css" />
+<link rel="stylesheet" href="/css/editor.css" />
+</head>
+<body class="app">
+
+<div id="app">
+
+  <!-- ============================================================ top bar -->
+  <header class="topbar">
+    <a class="brand" href="/" title="Back to clipforge home">
+      <span class="brand-mark">
+        <svg viewBox="0 0 32 32" width="26" height="26">
+          <defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#22d3ee"/>
+          </linearGradient></defs>
+          <rect x="1.5" y="4.5" width="29" height="23" rx="6" fill="url(#bg1)"/>
+          <path d="M13 11.6v8.8l7.4-4.4z" fill="#0b0f1c"/>
+        </svg>
+      </span>
+      <span class="brand-text">Clip<em>Forge</em></span>
+    </a>
+
+    <div class="proj-block">
+      <input id="projectName" class="proj-name" value="Untitled project" spellcheck="false" aria-label="Project name" />
+      <span id="saveState" class="save-state">Saved</span>
+    </div>
+
+    <div class="topbar-spacer"></div>
+
+    <div class="tool-group">
+      <button id="btnUndo" class="btn btn-sm" title="Undo (Ctrl+Z)">↶ Undo</button>
+      <button id="btnRedo" class="btn btn-sm" title="Redo (Ctrl+Shift+Z)">↷ Redo</button>
+    </div>
+
+    <div class="tool-group">
+      <button id="btnNew" class="btn btn-sm" title="New project">✦ New</button>
+      <button id="btnOpenFile" class="btn btn-sm" title="Open a project bundle">📂 Open</button>
+      <button id="btnSaveFile" class="btn btn-sm" title="Download the project + media as a bundle">💾 Save</button>
+      <button id="btnSaveOnline" class="btn btn-sm" title="Save the project on this server">☁ Save online</button>
+      <a id="btnProjects" class="btn btn-sm" href="/projects" title="All saved projects">🗂 Projects</a>
+    </div>
+
+    <button id="btnGuide" class="btn btn-sm btn-ghost" title="How to use the editor">? Guide</button>
+    <button id="btnExport" class="btn btn-primary" title="Export video (Ctrl+E)">⬇ Export</button>
+  </header>
+
+  <!-- =========================================================== workspace -->
+  <main class="workspace">
+
+    <!-- ------------------------------------------------------- left panel -->
+    <aside class="panel panel-left">
+      <nav class="tabs" id="leftTabs">
+        <button class="tab active" data-tab="media">Media</button>
+        <button class="tab" data-tab="titles">Titles</button>
+        <button class="tab" data-tab="audio">Audio</button>
+      </nav>
+
+      <div class="panel-body">
+        <!-- media -->
+        <section class="tab-pane active" id="tab-media">
+          <div id="dropZone" class="dropzone" title="Click to choose files or drop them here">
+            <span class="dropzone-ico">⬆</span>
+            <strong>Import media</strong>
+            <small>MP4 · MOV · WebM · MP3 · WAV · images</small>
+            <input id="fileInput" type="file" accept="video/*,audio/*,image/*" multiple hidden />
+          </div>
+          <div class="panel-row">
+            <span id="mediaInfo" class="muted small">Nothing imported yet</span>
+            <button id="btnAddAllMedia" class="btn btn-sm" title="Append every imported item to the timeline">＋ Add all</button>
+          </div>
+          <div id="mediaList" class="media-list"></div>
+          <p id="mediaEmpty" class="empty-hint">
+            Drop files here, or drag a card onto the timeline. Everything stays on your device —
+            files are only uploaded if you press “Save online”.
+          </p>
+        </section>
+
+        <!-- titles -->
+        <section class="tab-pane" id="tab-titles">
+          <p class="pane-lead">Click a style to drop a 3-second title at the playhead. Edit the words in the inspector.</p>
+          <div id="titlePresets" class="title-presets"></div>
+        </section>
+
+        <!-- audio -->
+        <section class="tab-pane" id="tab-audio">
+          <p class="pane-lead">Bring music or a voice-over in, then balance it clip by clip.</p>
+          <button id="btnImportAudio" class="btn btn-block">🎵 Import audio files</button>
+          <button id="btnAddMusic" class="btn btn-block">🎹 Add generated music bed</button>
+          <div class="tip-card">
+            <strong>Mixing tips</strong>
+            <ul>
+              <li>Select an audio clip and use <em>Volume</em> + <em>Fade in/out</em> in the inspector.</li>
+              <li>Use the 🔇 icon on a track header to mute a whole track.</li>
+              <li>Export keeps the mix exactly as you hear it.</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+    </aside>
+
+    <!-- ------------------------------------------------------------ stage -->
+    <section class="stage">
+      <div class="stage-toolbar">
+        <label class="inline-field">Canvas
+          <select id="aspectSelect" class="mini-select"></select>
+        </label>
+        <label class="inline-field">Fit
+          <select id="fitSelect" class="mini-select">
+            <option value="contain">Fit to screen</option>
+            <option value="actual">100%</option>
+          </select>
+        </label>
+        <div class="stage-toolbar-spacer"></div>
+        <button id="btnSnapshot" class="btn btn-sm" title="Save the current frame as PNG">📸 Snapshot</button>
+        <button id="btnFullscreen" class="btn btn-sm" title="Fullscreen preview">⛶ Fullscreen</button>
+      </div>
+
+      <div class="preview-area" id="previewArea">
+        <canvas id="preview" class="stage-canvas"></canvas>
+        <div class="stage-empty" id="stageEmpty">
+          <strong>Your preview appears here</strong>
+          <span>Import a clip, then drag it onto the timeline below.</span>
+          <button class="btn btn-sm" id="btnStageImport">⬆ Import media</button>
+        </div>
+      </div>
+
+      <div class="transport">
+        <button id="btnJumpStart" class="icon-btn" title="Go to start (Home)">⏮</button>
+        <button id="btnPrevFrame" class="icon-btn" title="Previous frame (←)">◀|</button>
+        <button id="btnPlay" class="play-btn" title="Play / pause (Space)">▶</button>
+        <button id="btnNextFrame" class="icon-btn" title="Next frame (→)">|▶</button>
+        <button id="btnJumpEnd" class="icon-btn" title="Go to end (End)">⏭</button>
+
+        <span class="timecode"><b id="timeCurrent">00:00.00</b><i>/</i><span id="timeTotal">00:00.00</span></span>
+
+        <div class="transport-spacer"></div>
+
+        <label class="inline-field">Speed
+          <select id="rateSelect" class="mini-select">
+            <option value="0.25">0.25×</option>
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1×</option>
+            <option value="1.5">1.5×</option>
+            <option value="2">2×</option>
+          </select>
+        </label>
+        <button id="btnLoop" class="icon-btn" title="Loop playback">🔁</button>
+        <button id="btnMute" class="icon-btn" title="Mute preview (M)">🔊</button>
+        <input id="masterVolume" class="mini-range" type="range" min="0" max="1.5" step="0.01" value="1" title="Preview volume" />
+      </div>
+    </section>
+
+    <!-- ----------------------------------------------------- right panel -->
+    <aside class="panel panel-right">
+      <nav class="tabs" id="rightTabs">
+        <button class="tab active" data-tab="clip">Clip</button>
+        <button class="tab" data-tab="project">Project</button>
+      </nav>
+      <div class="panel-body">
+        <section class="tab-pane active" id="tab-clip">
+          <div id="inspector" class="inspector"></div>
+        </section>
+
+        <section class="tab-pane" id="tab-project">
+          <div class="insp-section">
+            <h4 class="insp-title">Project settings</h4>
+            <div class="insp-row"><label>Name</label><input id="projName" class="insp-num wide" type="text" /></div>
+            <div class="insp-row"><label>Canvas</label><select id="projAspect" class="insp-select"></select></div>
+            <div class="insp-row"><label>Frame rate</label><select id="projFps" class="insp-select">
+              <option value="24">24 fps (film)</option>
+              <option value="25">25 fps (PAL)</option>
+              <option value="30" selected>30 fps</option>
+              <option value="60">60 fps</option>
+            </select></div>
+            <div class="insp-row"><label>Background</label><input id="projBg" class="insp-color" type="color" value="#000000" /></div>
+            <div class="insp-row"><label>Master volume</label><input id="projVolume" class="insp-range" type="range" min="0" max="1.5" step="0.01" value="1" /></div>
+          </div>
+          <div class="insp-section">
+            <h4 class="insp-title">Timeline</h4>
+            <div id="projStats" class="stat-grid"></div>
+            <div class="chip-row tight">
+              <button id="btnAddVideoTrack" class="chip">＋ Video track</button>
+              <button id="btnAddTextTrack" class="chip">＋ Text track</button>
+              <button id="btnClearTimeline" class="chip danger">Clear clips</button>
+            </div>
+          </div>
+          <div class="insp-section">
+            <h4 class="insp-title">Storage</h4>
+            <div class="chip-row tight">
+              <button id="btnSaveOnline2" class="chip">☁ Save online</button>
+              <button id="btnSaveJson" class="chip">⤓ Small JSON</button>
+              <button id="btnLoadFromServer" class="chip">🗂 Load from server</button>
+            </div>
+            <p class="insp-sub">A full bundle (.clipforge.zip) keeps your media inside the file. “Small JSON” skips media — you will re-import clips after opening it.</p>
+          </div>
+        </section>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ============================================================ timeline -->
+  <section class="timeline" id="timeline">
+    <div class="tl-toolbar">
+      <button id="tlSplit" class="btn btn-sm" title="Split selected clips at the playhead (S)">✂ Split</button>
+      <button id="tlDuplicate" class="btn btn-sm" title="Duplicate (Ctrl+D)">⧉ Duplicate</button>
+      <button id="tlDelete" class="btn btn-sm" title="Delete (Del)">🗑 Delete</button>
+      <span class="tl-divider"></span>
+      <button id="tlAddText" class="btn btn-sm" title="Add a title at the playhead (T)">＋ Text</button>
+      <button id="tlAddTrack" class="btn btn-sm" title="Add a video track">＋ Track</button>
+      <span class="tl-divider"></span>
+      <button id="tlSnap" class="btn btn-sm active" title="Toggle snapping">🧲 Snap</button>
+      <span class="tl-divider"></span>
+      <button id="tlZoomOut" class="icon-btn" title="Zoom out">－</button>
+      <input id="tlZoom" class="tl-zoom" type="range" min="4" max="600" step="1" value="80" title="Timeline zoom" />
+      <button id="tlZoomIn" class="icon-btn" title="Zoom in">＋</button>
+      <span id="tlZoomLabel" class="muted small">80px/s</span>
+      <button id="tlFit" class="btn btn-sm" title="Fit the project into view">Fit</button>
+      <div class="tl-toolbar-spacer"></div>
+      <span id="tlInfo" class="muted small"></span>
+    </div>
+
+    <div class="tl-main">
+      <div class="tl-heads" id="tlHeads">
+        <div class="tl-heads-top"><span>Tracks</span></div>
+        <div class="tl-heads-body"><div id="tlHeadsList" class="tl-heads-list"></div></div>
+      </div>
+      <div class="tl-scroll" id="tlScroll">
+        <div class="tl-inner" id="tlInner">
+          <div class="tl-ruler" id="tlRuler"></div>
+          <div class="tl-tracks" id="tlTracks"></div>
+          <div class="tl-playhead" id="tlPlayhead"><i></i></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tlMenu" class="ctx-menu" hidden>
+      <button data-action="split">✂ Split here</button>
+      <button data-action="duplicate">⧉ Duplicate</button>
+      <button data-action="fadein">◗ Fade in</button>
+      <button data-action="fadeout">◖ Fade out</button>
+      <button data-action="mute">🔇 Mute / unmute</button>
+      <button data-action="full">⤢ Reset transform</button>
+      <button data-action="move-playhead">⇤ Move playhead to clip start</button>
+      <button data-action="delete" class="danger">🗑 Delete</button>
+    </div>
+  </section>
+
+  <!-- ========================================================== status bar -->
+  <footer class="statusbar">
+    <span id="statusMessage" class="status-msg">Ready</span>
+    <div class="statusbar-spacer"></div>
+    <span id="statusStats" class="muted small"></span>
+  </footer>
+</div>
+
+<!-- helpers -->
+<div id="mediaPool" class="media-pool" aria-hidden="true"></div>
+<div id="dropOverlay" class="drop-overlay" hidden><div><strong>Drop to import</strong><span>video, audio or images</span></div></div>
+<div id="toasts" class="toasts"></div>
+<div id="progressHost" class="progress-host" hidden></div>
+<div id="modalRoot" class="modal-root" hidden></div>
+
+<script type="module" src="/js/editor/app.js"></script>
+</body>
+</html>

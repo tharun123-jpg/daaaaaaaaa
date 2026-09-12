@@ -1,0 +1,104 @@
+/* ==========================================================================
+   ClipForge — shared base styles (tokens, buttons, utility)
+   ========================================================================== */
+
+:root {
+  --bg: #070a14;
+  --bg-2: #0b0f1c;
+  --panel: #101528;
+  --panel-2: #141a30;
+  --panel-3: #1a2140;
+  --line: #232b4d;
+  --line-soft: #1b2240;
+  --text: #e9edf9;
+  --muted: #9aa5c8;
+  --muted-2: #6f7ba3;
+  --accent: #7c5cff;
+  --accent-2: #22d3ee;
+  --accent-3: #f472b6;
+  --good: #34d399;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --shadow: 0 18px 50px rgba(0, 0, 0, .45);
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a { color: inherit; text-decoration: none; }
+h1, h2, h3, h4 { margin: 0; line-height: 1.15; letter-spacing: -.02em; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+img, svg, canvas, video { display: block; max-width: 100%; }
+:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+
+::selection { background: rgba(124, 92, 255, .45); }
+
+/* scrollbars */
+* { scrollbar-width: thin; scrollbar-color: #2c3660 transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: #2c3660; border-radius: 20px; border: 2px solid transparent; background-clip: padding-box; }
+*::-webkit-scrollbar-thumb:hover { background: #3a4679; background-clip: padding-box; }
+
+/* ------------------------------------------------------------------ buttons */
+.btn {
+  --btn-bg: var(--panel-2);
+  --btn-border: var(--line);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 16px;
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  border-radius: 10px;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform .12s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+  white-space: nowrap;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn[disabled] { opacity: .45; cursor: not-allowed; transform: none; }
+.btn-primary {
+  --btn-bg: linear-gradient(135deg, var(--accent), #5b46d6);
+  --btn-border: transparent;
+  box-shadow: 0 10px 26px rgba(124, 92, 255, .35);
+}
+.btn-primary:hover { box-shadow: 0 14px 32px rgba(124, 92, 255, .5); }
+.btn-ghost { --btn-bg: transparent; --btn-border: var(--line); }
+.btn-ghost:hover { --btn-bg: var(--panel-2); }
+.btn-danger { --btn-bg: rgba(248, 113, 113, .12); --btn-border: rgba(248, 113, 113, .4); color: #ffc9c9; }
+.btn-lg { padding: 13px 22px; font-size: 15px; border-radius: 12px; }
+.btn-sm { padding: 7px 12px; font-size: 13px; border-radius: 9px; }
+
+/* ------------------------------------------------------------------ helpers */
+.muted { color: var(--muted); }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* --------------------------------------------------------------- animations */
+@keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.85); } }
+@keyframes drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, -40px, 0); } }
+@keyframes fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}
