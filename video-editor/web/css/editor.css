@@ -311,6 +311,8 @@ body.app { height: 100vh; overflow: hidden; background: #05070f; }
 .drop-overlay {
   position: fixed; inset: 0; z-index: 90; display: grid; place-items: center;
   background: rgba(7, 10, 20, .78); backdrop-filter: blur(4px);
+  pointer-events: none;              /* never swallow the drop itself */
+  animation: fade-in .12s ease both;
 }
 .drop-overlay > div { display: grid; justify-items: center; gap: 6px; padding: 34px 54px; border: 2px dashed var(--accent); border-radius: 20px; background: rgba(124, 92, 255, .12); }
 .drop-overlay strong { font-size: 20px; }

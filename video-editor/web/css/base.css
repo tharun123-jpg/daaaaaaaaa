@@ -28,6 +28,9 @@
 
 * { box-sizing: border-box; }
 
+/* the hidden attribute must always win over layout rules like `display: grid` */
+[hidden] { display: none !important; }
+
 html, body { height: 100%; }
 
 body {
@@ -98,6 +101,7 @@ img, svg, canvas, video { display: block; max-width: 100%; }
 @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.85); } }
 @keyframes drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, -40px, 0); } }
 @keyframes fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }

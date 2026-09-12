@@ -543,20 +543,56 @@ canvas.addEventListener('dblclick', () => {
 
 /* ------------------------------------------------------ global D&D files */
 
-let dragDepth = 0;
+// The hint overlay is driven by a heartbeat instead of enter/leave counters:
+// a counter can drift (nested elements, drags that leave the iframe, cancelled
+// drags) and leave the overlay stuck on screen. `dragover` keeps firing while a
+// drag is really over the page, so when it goes quiet we hide the hint.
+const dropOverlay = $('#dropOverlay');
+let lastDragOver = 0;
+let overlayWatch = 0;
+
+function showDropHint() {
+  if (dropOverlay.hidden) dropOverlay.hidden = false;
+  lastDragOver = performance.now();
+  if (!overlayWatch) {
+    overlayWatch = window.setInterval(() => {
+      if (performance.now() - lastDragOver > 350) hideDropHint();
+    }, 150);
+  }
+}
+
+function hideDropHint() {
+  if (overlayWatch) { clearInterval(overlayWatch); overlayWatch = 0; }
+  dropOverlay.hidden = true;
+}
+
+const dragHasFiles = (event) => Array.from(event.dataTransfer?.types || []).includes('Files');
+
 window.addEventListener('dragenter', (event) => {
-  if (!Array.from(event.dataTransfer?.types || []).includes('Files')) return;
-  dragDepth++;
-  $('#dropOverlay').hidden = false;
+  if (!dragHasFiles(event)) return;
+  showDropHint();
 });
-window.addEventListener('dragover', (event) => { event.preventDefault(); });
-window.addEventListener('dragleave', () => {
-  dragDepth = Math.max(0, dragDepth - 1);
-  if (!dragDepth) $('#dropOverlay').hidden = true;
+
+window.addEventListener('dragover', (event) => {
+  if (dragHasFiles(event)) {
+    event.preventDefault();    // required so the browser drops instead of opening the file
+    showDropHint();
+  } else if (!event.target.closest('.tl-tracks, #dropZone')) {
+    hideDropHint();
+  }
 });
+
+// leaving an iframe does not always deliver a matching dragleave — the heartbeat covers it
+window.addEventListener('dragleave', (event) => {
+  if (!event.relatedTarget) hideDropHint();
+});
+window.addEventListener('dragend', hideDropHint);
+window.addEventListener('blur', hideDropHint);
+document.addEventListener('mouseleave', hideDropHint);
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape') hideDropHint(); });
+
 window.addEventListener('drop', async (event) => {
-  dragDepth = 0;
-  $('#dropOverlay').hidden = true;
+  hideDropHint();
   if (event.target.closest('.tl-tracks') || event.target.closest('#dropZone')) return;
   event.preventDefault();
   const files = Array.from(event.dataTransfer?.files || []).filter(isMediaFile);
