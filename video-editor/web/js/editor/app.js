@@ -14,6 +14,7 @@ import { mountTimeline } from './timeline.js';
 import { mountInspector } from './inspector.js';
 import { mountMediaBin, importFiles, mediaFromFile } from './media.js';
 import { mountExport } from './export.js';
+import { mountLibrary } from './library.js';
 import { placeMediaOnTimeline, placeTextClip, addAllMediaToTimeline } from './placement.js';
 import {
   saveToFile, openFromFile, saveOnline, loadOnlineProject, listOnlineProjects,
@@ -34,6 +35,7 @@ mountMediaBin({
   onAddAll: () => addAllMediaToTimeline(),
 });
 mountExport({ player, renderer, onFinished: () => refreshStats() });
+mountLibrary({ onChanged: () => { timeline.refresh(); refreshStats(); } });
 
 store.on('status', ({ message, kind }) => {
   const node = $('#statusMessage');
@@ -308,21 +310,16 @@ function refreshStats() {
 
 /* --------------------------------------------------------- left panels */
 
-const TAB_ICONS = { media: '📁', titles: '🔠', audio: '🎚' };
-for (const tabs of [$('#leftTabs'), $('#rightTabs')]) {
+// generic tab groups: any .tabs inside a .panel switches that panel's panes
+for (const tabs of $$('.tabs')) {
   tabs.addEventListener('click', (event) => {
     const tab = event.target.closest('.tab');
     if (!tab) return;
-    const group = tabs.id === 'leftTabs' ? '#leftTabs, #tab-media, #tab-titles, #tab-audio' : '#rightTabs, #tab-clip, #tab-project';
+    const panel = tabs.closest('.panel') || document;
     $$('.tab', tabs).forEach((node) => node.classList.toggle('active', node === tab));
-    const panes = tabs.id === 'leftTabs'
-      ? ['#tab-media', '#tab-titles', '#tab-audio']
-      : ['#tab-clip', '#tab-project'];
-    panes.forEach((selector) => {
-      const pane = $(selector);
+    $$('.tab-pane', panel).forEach((pane) => {
       pane.classList.toggle('active', pane.id === `tab-${tab.dataset.tab}`);
     });
-    void group;
   });
 }
 

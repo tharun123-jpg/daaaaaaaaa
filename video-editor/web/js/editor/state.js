@@ -30,16 +30,6 @@ export const DEFAULT_ADJUSTMENTS = {
   hue: 0, grayscale: 0, sepia: 0, opacity: 1,
 };
 
-export const FILTER_PRESETS = [
-  { id: 'none', name: 'Original', adjust: {} },
-  { id: 'vivid', name: 'Vivid', adjust: { saturation: 1.45, contrast: 1.12, brightness: 1.03 } },
-  { id: 'warm', name: 'Golden', adjust: { saturation: 1.2, sepia: 0.28, brightness: 1.05 } },
-  { id: 'cool', name: 'Arctic', adjust: { saturation: 1.05, hue: 12, brightness: 1.04, contrast: 1.06 } },
-  { id: 'bw', name: 'Noir', adjust: { grayscale: 1, contrast: 1.22 } },
-  { id: 'faded', name: 'Faded film', adjust: { saturation: 0.72, contrast: 0.9, brightness: 1.08, sepia: 0.12 } },
-  { id: 'pop', name: 'Pop', adjust: { saturation: 1.6, contrast: 1.2 } },
-  { id: 'dream', name: 'Dream', adjust: { blur: 2.4, saturation: 1.15, brightness: 1.06 } },
-];
 
 export const TITLE_PRESETS = [
   {
@@ -94,16 +84,18 @@ export function createProject(name = 'Untitled project', aspect = '16:9') {
     },
     tracks: [
       makeTrack('video', 1),
+      makeTrack('audio', 1),
       makeTrack('text', 1),
     ],
   };
 }
 
 export function makeTrack(type = 'video', index = 1) {
+  const prefix = type === 'text' ? 'T' : type === 'audio' ? 'A' : 'V';
   return {
     id: uid('trk'),
     type,
-    name: type === 'text' ? `T${index}` : `V${index}`,
+    name: `${prefix}${index}`,
     muted: false,
     hidden: false,
     locked: false,
@@ -407,6 +399,9 @@ export function makeClip(media, { start = 0, trackId = null, duration = null } =
     x: 0.5,
     y: 0.5,
     adjust: {},
+    fx: { vignette: 0, grain: 0, fade: 0, leak: 0 },
+    eq: { low: 0, mid: 0, high: 0 },
+    keyframes: {},
     text: null,
   };
 }
@@ -431,6 +426,9 @@ export function makeTextClip({ start = 0, duration = 3, preset = TITLE_PRESETS[0
     x: 0.5,
     y: 0.5,
     adjust: {},
+    fx: { vignette: 0, grain: 0, fade: 0, leak: 0 },
+    eq: { low: 0, mid: 0, high: 0 },
+    keyframes: {},
     text: {
       preset: preset.id,
       value: text || preset.text,
@@ -565,6 +563,10 @@ export function moveClip(clipId, { trackId, start }) {
   history.commit('Move clip', before);
   store.emit('project', { reason: 'move' });
   return true;
+}
+
+export function defaultTrackOfType(type) {
+  return store.project.tracks.find((t) => t.type === type) || null;
 }
 
 export function totalStats() {

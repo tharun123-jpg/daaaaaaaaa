@@ -4,6 +4,7 @@
 
 import { clamp } from './utils.js';
 import { store, clipsAt, mediaById, DEFAULT_ADJUSTMENTS } from './state.js';
+import { evaluateClip } from './anim.js';
 
 const LOOKAHEAD = 0.3;
 const DRIFT_TOLERANCE = 0.28;
@@ -18,7 +19,135 @@ function filterString(adjust = {}) {
   if (a.blur) parts.push(`blur(${a.blur}px)`);
   if (a.grayscale) parts.push(`grayscale(${a.grayscale})`);
   if (a.sepia) parts.push(`sepia(${a.sepia})`);
+  // temperature/tint are white-balance shifts — a blend pass handles them
+  if (a.temperature > 0.02) parts.push(`sepia(${(a.temperature * 0.32).toFixed(3)})`);
+  if (a.temperature < -0.02) parts.push(`hue-rotate(${(a.temperature * -14).toFixed(1)}deg)`);
+  if (a.tint > 0.02) parts.push(`hue-rotate(${(a.tint * -8).toFixed(1)}deg) saturate(${(1 + a.tint * 0.12).toFixed(3)})`);
+  if (a.tint < -0.02) parts.push(`hue-rotate(${(a.tint * -10).toFixed(1)}deg)`);
   return parts.length ? parts.join(' ') : 'none';
+}
+
+/* ------------------------------------------------------- procedural assets */
+
+let noiseTile = null;
+function getNoiseTile() {
+  if (noiseTile) return noiseTile;
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const image = ctx.createImageData(size, size);
+  for (let i = 0; i < image.data.length; i += 4) {
+    const v = 110 + Math.random() * 90;
+    image.data[i] = v;
+    image.data[i + 1] = v;
+    image.data[i + 2] = v;
+    image.data[i + 3] = 255;
+  }
+  ctx.putImageData(image, 0, 0);
+  noiseTile = canvas;
+  return noiseTile;
+}
+
+const hexToRgb = (hex) => {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || '');
+  if (!m) return null;
+  return [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)];
+};
+
+/** Warm/cool + green/magenta white balance, drawn as a soft-light wash. */
+function drawWhiteBalance(ctx, rect, adjust) {
+  const { temperature = 0, tint = 0 } = adjust;
+  if (Math.abs(temperature) < 0.02 && Math.abs(tint) < 0.02) return;
+  const [x, y, w, h] = rect;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  ctx.globalCompositeOperation = 'soft-light';
+  if (Math.abs(temperature) > 0.02) {
+    const color = temperature > 0 ? '255,150,60' : '70,150,255';
+    ctx.fillStyle = `rgba(${color},${Math.min(0.95, Math.abs(temperature))})`;
+    ctx.fillRect(x, y, w, h);
+  }
+  if (Math.abs(tint) > 0.02) {
+    const color = tint > 0 ? '255,60,190' : '60,255,130';
+    ctx.fillStyle = `rgba(${color},${Math.min(0.8, Math.abs(tint) * 0.7)})`;
+    ctx.fillRect(x, y, w, h);
+  }
+  ctx.restore();
+}
+
+/** Matte / film-fade: lift the blacks with a screen pass. */
+function drawMatte(ctx, rect, amount) {
+  if (amount <= 0.01) return;
+  const [x, y, w, h] = rect;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  ctx.globalCompositeOperation = 'screen';
+  ctx.fillStyle = `rgba(92,98,132,${(amount * 0.34).toFixed(3)})`;
+  ctx.fillRect(x, y, w, h);
+  ctx.restore();
+}
+
+function drawVignette(ctx, rect, amount) {
+  if (amount <= 0.01) return;
+  const [x, y, w, h] = rect;
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  const radius = Math.hypot(w, h) / 2;
+  const gradient = ctx.createRadialGradient(cx, cy, radius * 0.42, cx, cy, radius);
+  gradient.addColorStop(0, 'rgba(0,0,0,0)');
+  gradient.addColorStop(1, `rgba(0,0,0,${(amount * 0.82).toFixed(3)})`);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = gradient;
+  ctx.fillRect(x, y, w, h);
+  ctx.restore();
+}
+
+function drawGrain(ctx, rect, amount, time) {
+  if (amount <= 0.01) return;
+  const [x, y, w, h] = rect;
+  const tile = getNoiseTile();
+  const ox = Math.floor((time * 90) % 128);
+  const oy = Math.floor((time * 53) % 128);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  ctx.globalCompositeOperation = 'overlay';
+  ctx.globalAlpha = Math.min(0.7, amount * 0.62);
+  const pattern = ctx.createPattern(tile, 'repeat');
+  if (pattern?.setTransform) pattern.setTransform(new DOMMatrix([1, 0, 0, 1, -ox, -oy]));
+  ctx.fillStyle = pattern || 'rgba(128,128,128,.12)';
+  ctx.fillRect(x, y, w, h);
+  ctx.restore();
+}
+
+/** Animated light leak: a warm diagonal gradient sweeping across the frame. */
+function drawLightLeak(ctx, rect, amount, time) {
+  if (amount <= 0.01) return;
+  const [x, y, w, h] = rect;
+  const phase = (Math.sin(time * 0.7) + 1) / 2;
+  const gradient = ctx.createLinearGradient(x - w * 0.2 + phase * w * 0.35, y, x + w * 0.8 + phase * w * 0.35, y + h);
+  gradient.addColorStop(0, `rgba(255,140,60,0)`);
+  gradient.addColorStop(0.45, `rgba(255,168,86,${(amount * 0.5).toFixed(3)})`);
+  gradient.addColorStop(1, `rgba(255,90,160,0)`);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  ctx.globalCompositeOperation = 'screen';
+  ctx.fillStyle = gradient;
+  ctx.fillRect(x, y, w, h);
+  ctx.restore();
 }
 
 export function fadeFactor(clip, t) {
@@ -124,7 +253,7 @@ export class Renderer {
       el.decoding = 'async';
     }
     el.dataset.mediaId = media.id;
-    entry = { el, kind: media.kind, gain: null, source: null, connected: false };
+    entry = { el, kind: media.kind, gain: null, source: null, connected: false, low: null, mid: null, high: null };
     if (media.kind !== 'image') {
       this.pool?.append(el);
       el.addEventListener('error', () => {
@@ -140,10 +269,25 @@ export class Renderer {
   connectAudio(entry) {
     if (entry.connected || !this.audioCtx) return;
     try {
-      entry.source = this.audioCtx.createMediaElementSource(entry.el);
-      entry.gain = this.audioCtx.createGain();
+      const ctx = this.audioCtx;
+      entry.source = ctx.createMediaElementSource(entry.el);
+      // three-band EQ: bass shelf · voice peak · treble shelf
+      entry.low = ctx.createBiquadFilter();
+      entry.low.type = 'lowshelf';
+      entry.low.frequency.value = 250;
+      entry.mid = ctx.createBiquadFilter();
+      entry.mid.type = 'peaking';
+      entry.mid.frequency.value = 1200;
+      entry.mid.Q.value = 1;
+      entry.high = ctx.createBiquadFilter();
+      entry.high.type = 'highshelf';
+      entry.high.frequency.value = 4200;
+      entry.gain = ctx.createGain();
       entry.gain.gain.value = 1;
-      entry.source.connect(entry.gain);
+      entry.source.connect(entry.low);
+      entry.low.connect(entry.mid);
+      entry.mid.connect(entry.high);
+      entry.high.connect(entry.gain);
       entry.gain.connect(this.masterGain);
       entry.connected = true;
     } catch (err) {
@@ -201,15 +345,21 @@ export class Renderer {
       const entry = this.elementFor(media);
       if (!entry) continue;
       activeIds.add(media.id);
+      const evaluated = evaluateClip(clip, t);
       const speed = (clip.speed || 1) * (store.rate || 1);
       const local = (clip.in || 0) + Math.max(0, t - clip.start) * (clip.speed || 1) * (store.rate || 1);
       const audible = !clip.muted && !track.muted && !track.hidden;
 
-      // gain / volume
+      // gain / volume (volume may be keyframed → automation)
       const fade = fadeFactor(clip, t);
-      const vol = clamp((clip.volume ?? 1) * fade, 0, 2);
-      if (entry.gain) entry.gain.gain.value = audible ? vol : 0;
-      else {
+      const vol = clamp(evaluated.volume * fade, 0, 2);
+      if (entry.gain) {
+        entry.gain.gain.value = audible ? vol : 0;
+        const eq = evaluated.eq || {};
+        if (entry.low) entry.low.gain.value = eq.low || 0;
+        if (entry.mid) entry.mid.gain.value = eq.mid || 0;
+        if (entry.high) entry.high.gain.value = eq.high || 0;
+      } else {
         entry.el.volume = clamp(vol, 0, 1);
         entry.el.muted = !audible;
       }
@@ -265,11 +415,12 @@ export class Renderer {
   }
 
   drawVisualClip(ctx, clip, t, W, H) {
+    const v = evaluateClip(clip, t);
     const media = mediaById(clip.mediaId);
     if (!media) {
       // media was not re-imported (small JSON project, or a cleared bin)
       ctx.save();
-      ctx.globalAlpha = 0.55 * clamp((clip.opacity ?? 1) * fadeFactor(clip, t), 0, 1);
+      ctx.globalAlpha = 0.55 * clamp(v.opacity * fadeFactor(clip, t), 0, 1);
       ctx.fillStyle = '#141a30';
       ctx.fillRect(0, 0, W, H);
       ctx.strokeStyle = '#39406b';
@@ -289,38 +440,46 @@ export class Renderer {
       return;
     }
     const entry = this.elementFor(media);
-    const alpha = clamp((clip.opacity ?? 1) * fadeFactor(clip, t), 0, 1);
+    const alpha = clamp(v.opacity * fadeFactor(clip, t), 0, 1);
     if (alpha <= 0.001) return;
-
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.filter = filterString(clip.adjust);
 
     const sw = media.width || entry?.el.videoWidth || entry?.el.naturalWidth || W;
     const sh = media.height || entry?.el.videoHeight || entry?.el.naturalHeight || H;
     const cover = Math.max(W / sw, H / sh);
-    const scale = cover * (clip.scale || 1);
+    const scale = cover * v.scale;
     const dw = sw * scale;
     const dh = sh * scale;
-    const cx = (clip.x ?? 0.5) * W;
-    const cy = (clip.y ?? 0.5) * H;
+    const cx = v.x * W;
+    const cy = v.y * H;
 
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.filter = filterString(v.adjust);
     ctx.translate(cx, cy);
-    if (clip.rotate) ctx.rotate((clip.rotate * Math.PI) / 180);
+    if (v.rotate) ctx.rotate((v.rotate * Math.PI) / 180);
     ctx.drawImage(entry.el, -dw / 2, -dh / 2, dw, dh);
-    ctx.restore();
+    ctx.filter = 'none';
+    ctx.globalAlpha = 1;
 
-    // transform handles are drawn by the stage overlay, not here
+    // grading + effect passes, clipped to the clip's own rectangle
+    const rect = [-dw / 2, -dh / 2, dw, dh];
+    drawWhiteBalance(ctx, rect, v.adjust);
+    if (v.fx.fade) drawMatte(ctx, rect, v.fx.fade);
+    if (v.fx.leak) drawLightLeak(ctx, rect, v.fx.leak, t);
+    if (v.fx.grain) drawGrain(ctx, rect, v.fx.grain, t);
+    if (v.fx.vignette) drawVignette(ctx, rect, v.fx.vignette);
+    ctx.restore();
   }
 
   drawTextClip(ctx, clip, t, W, H) {
-    const style = clip.text?.style || {};
+    const v = evaluateClip(clip, t);
+    const style = v.textStyle || clip.text?.style || {};
     const value = clip.text?.value ?? '';
     if (!value) return;
-    const alpha = clamp((clip.opacity ?? 1) * fadeFactor(clip, t), 0, 1);
+    const alpha = clamp(v.opacity * fadeFactor(clip, t), 0, 1);
     if (alpha <= 0.001) return;
 
-    const px = (v, fallback = 0) => (typeof v === 'number' ? v : fallback);
+    const px = (val, fallback = 0) => (typeof val === 'number' ? val : fallback);
     const fontSize = Math.max(6, px(style.fontSize, 0.08) * H);
     const lines = String(value).split('\n');
     const lineHeight = fontSize * 1.22;
@@ -376,6 +535,13 @@ export class Renderer {
       ctx.shadowBlur = 0;
     }
     ctx.restore();
+
+    // text clips can carry the same effect passes
+    if (v.fx.vignette || v.fx.grain) {
+      const rect = [0, 0, W, H];
+      if (v.fx.grain) drawGrain(ctx, rect, v.fx.grain, t);
+      if (v.fx.vignette) drawVignette(ctx, rect, v.fx.vignette);
+    }
   }
 
   /* -------------------------------------------------------------- export */

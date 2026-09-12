@@ -8,6 +8,7 @@ import {
   MIN_CLIP_DURATION, maxClipDuration, splitClipAt, removeSelected, duplicateClip,
   splitSelectionAt, addTrack, setTrackFlag, removeTrack,
 } from './state.js';
+import { keyframeTimes, keyframesOf, retimeKeyframes, sampleProperty } from './anim.js';
 
 const HEAD_WIDTH = 132;
 const TRACK_HEIGHT = { video: 62, audio: 54, text: 42 };
@@ -199,12 +200,75 @@ export function mountTimeline({ onSeek, getPxPerSec }) {
       if (clip.kind === 'video' && media?.peaks) node.dataset.peaks = '1';
     }
 
-    if (clip.volume !== 1 || clip.muted) node.append(el('span', { class: 'tl-clip-badge', text: clip.muted ? 'M' : `${Math.round(clip.volume * 100)}%` }));
+    if (clip.muted) node.append(el('span', { class: 'tl-clip-badge', text: 'M' }));
     if ((clip.speed || 1) !== 1) node.append(el('span', { class: 'tl-clip-badge speed', text: `${clip.speed}×` }));
 
     node.append(el('i', { class: 'tl-handle left', dataset: { handle: 'left' } }));
     node.append(el('i', { class: 'tl-handle right', dataset: { handle: 'right' } }));
     return node;
+  }
+
+  /**
+   * Keyframe diamonds, fade handles, fade shading and the volume automation
+   * curve. Rebuilt on every layout pass so clips that already have a DOM node
+   * still pick up new keyframes / fades.
+   */
+  function updateClipDecorations(node, clip) {
+    if (!node) return;
+    const per = pps();
+
+    for (const selector of ['.kf-dot', '.tl-kf-badge', '.tl-fade', '.tl-fade-knob', '.tl-vol-line']) {
+      for (const old of Array.from(node.querySelectorAll(selector))) old.remove();
+    }
+
+    const times = keyframeTimes(clip);
+    node.classList.toggle('has-kf', times.length > 0);
+
+    // volume automation curve
+    if (keyframesOf(clip, 'volume').length) {
+      const svg = el('svg', { class: 'tl-vol-line', viewBox: '0 0 100 100', preserveAspectRatio: 'none' });
+      const width = Math.max(8, timeToX(clip.duration));
+      const steps = Math.max(2, Math.min(80, Math.round(width / 12)));
+      const points = [];
+      for (let i = 0; i <= steps; i++) {
+        const t = (i / steps) * clip.duration;
+        const value = sampleProperty(clip, 'volume', t);
+        points.push(`${(i / steps) * 100},${clamp(100 - (value / 2) * 96, 2, 100)}`);
+      }
+      const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+      poly.setAttribute('points', points.join(' '));
+      svg.append(poly);
+      node.append(svg);
+    }
+
+    // fade shading + draggable knobs
+    if (clip.kind !== 'text') {
+      const fadeIn = clamp(clip.fadeIn || 0, 0, clip.duration);
+      const fadeOut = clamp(clip.fadeOut || 0, 0, clip.duration);
+      const shadeIn = el('i', { class: 'tl-fade fade-in', style: { width: `${fadeIn * per}px` } });
+      const shadeOut = el('i', { class: 'tl-fade fade-out', style: { width: `${fadeOut * per}px` } });
+      const knobIn = el('i', { class: 'tl-fade-knob knob-in', dataset: { fade: 'in' }, title: `Fade in ${fadeIn.toFixed(2)}s — drag to change` });
+      const knobOut = el('i', { class: 'tl-fade-knob knob-out', dataset: { fade: 'out' }, title: `Fade out ${fadeOut.toFixed(2)}s — drag to change` });
+      knobIn.style.left = `${fadeIn * per}px`;
+      knobOut.style.right = `${fadeOut * per}px`;
+      node.append(shadeIn, shadeOut, knobIn, knobOut);
+    }
+
+    // keyframe diamonds for the selected clip, badge otherwise
+    if (times.length) {
+      if (store.selection.has(clip.id)) {
+        for (const time of times) {
+          node.append(el('i', {
+            class: 'kf-dot',
+            dataset: { kfT: String(time) },
+            title: `Keyframes at ${fmtDuration(time)} — drag to retime`,
+            style: { left: `${time * per}px` },
+          }));
+        }
+      } else {
+        node.append(el('span', { class: 'tl-kf-badge', text: '◆' }));
+      }
+    }
   }
 
   function layoutClip(node, clip, track) {
@@ -215,6 +279,7 @@ export function mountTimeline({ onSeek, getPxPerSec }) {
     node.style.height = `${trackHeight(track) - 6}px`;
     node.dataset.trackId = track.id;
     node.dataset.index = String(index);
+    updateClipDecorations(node, clip);
   }
 
   function drawWaveform(node, clip) {
@@ -235,9 +300,9 @@ export function mountTimeline({ onSeek, getPxPerSec }) {
     const total = media?.duration || clip.duration;
     const inSec = clip.in || 0;
     const spanSec = clip.duration * (clip.speed || 1);
+    const stepX = 2;
     if (peaks && peaks.length) {
       const buckets = peaks.length / 2;
-      const stepX = 2;
       for (let x = 0; x < canvas.width; x += stepX) {
         const t = inSec + (x / canvas.width) * spanSec;
         const b = clamp(Math.floor((t / (total || 1)) * buckets), 0, buckets - 1);
@@ -491,7 +556,111 @@ export function mountTimeline({ onSeek, getPxPerSec }) {
 
   /* ------------------------------------------------------------- events */
 
+  /** Drag a keyframe diamond to retime every keyframe at that instant. */
+  function beginKeyframeDrag(event, dot, clipNode) {
+    const found = findClip(clipNode.dataset.clipId);
+    if (!found) return;
+    const { clip, track } = found;
+    if (track.locked) return;
+    event.preventDefault();
+    event.stopPropagation();
+    store.select(clip.id);
+    const from = Number(dot.dataset.kfT);
+    const snapshot = history.begin();
+    const startX = event.clientX;
+    let current = from;
+    dot.setPointerCapture(event.pointerId);
+    dot.classList.add('dragging');
+
+    const move = (moveEvent) => {
+      const dt = (moveEvent.clientX - startX) / pps();
+      const next = clamp(from + dt, 0, clip.duration);
+      retimeKeyframes(clip, current, next);
+      current = Number(next.toFixed(3));
+      const node = trackIdNode(clip.id);
+      if (node) {
+        // every diamond sitting at the old instant moves with the pointer
+        for (const other of node.querySelectorAll('.kf-dot')) {
+          if (Math.abs(Number(other.dataset.kfT) - from) < 0.02) {
+            other.dataset.kfT = String(current);
+            other.style.left = `${current * pps()}px`;
+          }
+        }
+      }
+      store.setStatus(`Keyframe at ${current.toFixed(2)}s`);
+    };
+    const up = () => {
+      dot.classList.remove('dragging');
+      dot.removeEventListener('pointermove', move);
+      dot.removeEventListener('pointerup', up);
+      dot.removeEventListener('pointercancel', up);
+      history.commit('Retime keyframe', snapshot);
+      store.emit('project', { reason: 'keyframe' });
+      store.emit('selection', { selection: store.selection });
+    };
+    dot.addEventListener('pointermove', move);
+    dot.addEventListener('pointerup', up);
+    dot.addEventListener('pointercancel', up);
+  }
+
+  /** Drag a fade knob to change the clip's fade in / fade out. */
+  function beginFadeDrag(event, knob, clipNode) {
+    const found = findClip(clipNode.dataset.clipId);
+    if (!found) return;
+    const { clip } = found;
+    event.preventDefault();
+    event.stopPropagation();
+    store.select(clip.id);
+    const side = knob.dataset.fade;
+    const snapshot = history.begin();
+    const startX = event.clientX;
+    const original = side === 'in' ? (clip.fadeIn || 0) : (clip.fadeOut || 0);
+    let current = original;
+    knob.setPointerCapture(event.pointerId);
+
+    const move = (moveEvent) => {
+      const delta = (moveEvent.clientX - startX) / pps();
+      const next = clamp(original + (side === 'in' ? delta : -delta), 0, clip.duration);
+      current = next;
+      if (side === 'in') clip.fadeIn = next;
+      else clip.fadeOut = next;
+      const node = trackIdNode(clip.id);
+      if (node) {
+        const fi = node.querySelector('.tl-fade.fade-in');
+        const fo = node.querySelector('.tl-fade.fade-out');
+        const ki = node.querySelector('.knob-in');
+        const ko = node.querySelector('.knob-out');
+        if (fi) fi.style.width = `${(clip.fadeIn || 0) * pps()}px`;
+        if (fo) fo.style.width = `${(clip.fadeOut || 0) * pps()}px`;
+        if (ki) ki.style.left = `${(clip.fadeIn || 0) * pps()}px`;
+        if (ko) ko.style.right = `${(clip.fadeOut || 0) * pps()}px`;
+      }
+      store.setStatus(`Fade ${side}: ${current.toFixed(2)}s`);
+    };
+    const up = () => {
+      knob.removeEventListener('pointermove', move);
+      knob.removeEventListener('pointerup', up);
+      knob.removeEventListener('pointercancel', up);
+      history.commit(`Fade ${side}`, snapshot);
+      store.emit('project', { reason: 'fade' });
+      store.emit('selection', { selection: store.selection });
+    };
+    knob.addEventListener('pointermove', move);
+    knob.addEventListener('pointerup', up);
+    knob.addEventListener('pointercancel', up);
+  }
+
   tracksEl.addEventListener('pointerdown', (event) => {
+    const dot = event.target.closest('.kf-dot');
+    if (dot) {
+      beginKeyframeDrag(event, dot, dot.closest('.tl-clip'));
+      return;
+    }
+    const knob = event.target.closest('.tl-fade-knob');
+    if (knob) {
+      beginFadeDrag(event, knob, knob.closest('.tl-clip'));
+      return;
+    }
     const clipNode = event.target.closest('.tl-clip');
     if (clipNode) {
       const { clipId } = clipNode.dataset;
@@ -718,9 +887,10 @@ export function mountTimeline({ onSeek, getPxPerSec }) {
   store.on('project', () => render());
   store.on('selection', () => {
     if (dragging) return;
-    $$('.tl-clip', tracksEl).forEach((node) => node.classList.toggle('selected', store.selection.has(node.dataset.clipId)));
-    const sel = store.selection.size;
-    if (sel) {
+    // full re-render: keyframe diamonds are only shown on the selected clip,
+    // so the decorations have to be rebuilt when the selection changes
+    render();
+    if (store.selection.size) {
       const first = trackIdNode(Array.from(store.selection)[0]);
       first?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     }

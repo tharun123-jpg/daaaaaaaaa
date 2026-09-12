@@ -59,6 +59,7 @@
     <aside class="panel panel-left">
       <nav class="tabs" id="leftTabs">
         <button class="tab active" data-tab="media">Media</button>
+        <button class="tab" data-tab="effects">Effects</button>
         <button class="tab" data-tab="titles">Titles</button>
         <button class="tab" data-tab="audio">Audio</button>
       </nav>
@@ -83,6 +84,49 @@
           </p>
         </section>
 
+        <!-- effects / animations / transitions -->
+        <section class="tab-pane" id="tab-effects">
+          <p class="pane-lead">Select a clip on the timeline, then tap an effect. Everything here is baked into the preview and the export.</p>
+
+          <div class="lib-section">
+            <h4 class="lib-title">Filters &amp; colour</h4>
+            <div id="libFilters" class="preset-grid"></div>
+          </div>
+
+          <div class="lib-section">
+            <h4 class="lib-title">Animation · In</h4>
+            <div id="libAnim-in" class="chip-row tight"></div>
+            <h4 class="lib-title">Animation · Out</h4>
+            <div id="libAnim-out" class="chip-row tight"></div>
+            <h4 class="lib-title">Animation · Combo</h4>
+            <div id="libAnim-combo" class="chip-row tight"></div>
+          </div>
+
+          <div class="lib-section">
+            <h4 class="lib-title">Transition to next clip</h4>
+            <div id="libTransitions" class="chip-row tight"></div>
+            <label class="inline-field lib-inline">Length
+              <select id="libTransitionDuration" class="mini-select">
+                <option value="0.25">0.25s</option>
+                <option value="0.5" selected>0.5s</option>
+                <option value="0.8">0.8s</option>
+                <option value="1.2">1.2s</option>
+              </select>
+            </label>
+            <p id="libTransitionNote" class="lib-note">Select a clip to use transitions.</p>
+          </div>
+
+          <div class="lib-section">
+            <h4 class="lib-title">Audio tools</h4>
+            <div id="libAudioTools" class="chip-row tight"></div>
+            <div class="chip-row tight">
+              <button id="libDuck" class="chip">🦆 Auto-duck under other clips</button>
+              <button id="libClearVolume" class="chip danger">Clear volume keyframes</button>
+            </div>
+            <p id="libAudioInfo" class="lib-note">Select an audio or video clip to use these tools.</p>
+          </div>
+        </section>
+
         <!-- titles -->
         <section class="tab-pane" id="tab-titles">
           <p class="pane-lead">Click a style to drop a 3-second title at the playhead. Edit the words in the inspector.</p>
@@ -97,9 +141,11 @@
           <div class="tip-card">
             <strong>Mixing tips</strong>
             <ul>
-              <li>Select an audio clip and use <em>Volume</em> + <em>Fade in/out</em> in the inspector.</li>
-              <li>Use the 🔇 icon on a track header to mute a whole track.</li>
-              <li>Export keeps the mix exactly as you hear it.</li>
+              <li><b>◆ keyframes on Volume</b> = manual ducking: lower the music, raise the voice.</li>
+              <li>Drag the <b>fade knobs</b> on the corners of an audio clip for quick fades.</li>
+              <li><b>Detach audio</b> (inspector → Audio) moves a video's sound to its own track.</li>
+              <li>3-band <b>EQ</b> + quick tools live in the inspector and the Effects tab.</li>
+              <li>Use the 🔊 / 🔇 icons on a track header to mute a whole track.</li>
             </ul>
           </div>
         </section>
