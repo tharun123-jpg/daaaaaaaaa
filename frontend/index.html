@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FF Anticheat Test Lab — QA Only</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+  <div class="brand">🛡️ Anticheat Test Lab</div>
+  <div class="subtitle">QA dashboard · simulated data only · NOT a cheat panel</div>
+</header>
+
+<div class="banner">
+  ⚠️ This tool does NOT hack Free Fire. It does NOT contain or provide cheats, bypasses, or mods.
+  It only tests <b>your own detection backend</b> with <b>fake data</b>.
+</div>
+
+<main>
+  <section class="cards">
+    <div class="card"><div class="num" id="statEvents">0</div><div class="lbl">Test events</div></div>
+    <div class="card"><div class="num danger" id="statDetections">0</div><div class="lbl">Detections</div></div>
+    <div class="card"><div class="num" id="statRules">4</div><div class="lbl">Rules loaded</div></div>
+  </section>
+
+  <section class="actions">
+    <button id="btnSimulate" class="primary">▶ Run Simulated Tests</button>
+    <button id="btnRefresh">↻ Refresh</button>
+    <button id="btnReset" class="ghost">Clear</button>
+  </section>
+
+  <section class="grid">
+    <div class="panel">
+      <h2>🚨 Detections (fake QA data)</h2>
+      <div id="feed" class="feed"><p class="muted">No detections yet. Click “Run Simulated Tests”.</p></div>
+    </div>
+    <div class="panel">
+      <h2>🧪 Send single test event</h2>
+      <label>Player ID <input id="fPlayer" value="qa_tester_01" /></label>
+      <label>Type
+        <select id="fType">
+          <option value="movement">movement</option>
+          <option value="aim_stats">aim_stats</option>
+          <option value="action">action</option>
+          <option value="report">report</option>
+        </select>
+      </label>
+      <div id="dynFields"></div>
+      <button id="btnSend" class="primary">Send event</button>
+      <p id="sendMsg" class="muted"></p>
+
+      <h2 style="margin-top:24px">📏 Rules (defensive only)</h2>
+      <ul class="rules">
+        <li><b>SPEED_ANOMALY</b> — flags simulated speed &gt; 15 m/s</li>
+        <li><b>AIM_STAT_ANOMALY</b> — flags simulated HS rate ≥ 85% over ≥20 samples</li>
+        <li><b>ACTION_RATE_ANOMALY</b> — flags simulated actions &gt; 15/sec</li>
+        <li><b>MANUAL_QA_REPORT</b> — QA manual report passthrough</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer>For legitimate QA on your own systems only. Cheating in live games violates Garena ToS.</footer>
+<script src="app.js"></script>
+</body>
+</html>

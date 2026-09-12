@@ -1,0 +1,18 @@
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:#0b1020;color:#e8ecf4}
+header{padding:20px 24px;background:#111833;border-bottom:1px solid #263}
+.brand{font-size:22px;font-weight:800}.subtitle{color:#9aa6c7;margin-top:4px}
+.banner{margin:16px 24px;padding:12px 16px;background:#2a1503;border:1px solid #a35c00;border-radius:10px;color:#ffd9a0}
+main{padding:0 24px 24px}.cards{display:flex;gap:12px;margin:8px 0 16px}.card{flex:1;background:#141c36;border-radius:12px;padding:16px;text-align:center;border:1px solid #2a3560}
+.num{font-size:32px;font-weight:800}.num.danger{color:#ff6b6b}.lbl{color:#9aa6c7;margin-top:4px}
+.actions{display:flex;gap:10px;margin-bottom:16px}
+button{padding:10px 18px;border-radius:10px;border:1px solid #334;cursor:pointer;background:#1c2547;color:#fff}
+button.primary{background:#2563eb;border-color:#2563eb;font-weight:700}
+button.ghost{background:transparent}
+.grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+.panel{background:#111833;border:1px solid #2a3560;border-radius:12px;padding:16px}
+.feed{display:flex;flex-direction:column;gap:10px;max-height:480px;overflow:auto}
+.det{background:#0d1330;border:1px solid #334;padding:10px;border-radius:10px}
+.det .r{font-weight:800;color:#ffb347}.det.high .r{color:#ff6b6b}
+.muted{color:#9aa6c7}label{display:block;margin:8px 0}input,select{width:100%;padding:8px;margin-top:4px;border-radius:8px;border:1px solid #334;background:#0d1330;color:#fff}
+.rules{color:#c6cfe8;line-height:1.7}footer{padding:16px 24px;color:#8a94b3;text-align:center}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.cards{flex-direction:column}}
